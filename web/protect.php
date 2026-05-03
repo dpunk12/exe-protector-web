@@ -38,6 +38,14 @@
  *   - Does not store any uploaded or generated data after the response is sent.
  *   - File extension and MIME type are both checked.
  *   - Stub path uses __DIR__ so it works regardless of cPanel directory layout.
+ *   - All values interpolated into the error page HTML are passed through
+ *     htmlspecialchars() inside output_error_page() so callers cannot
+ *     accidentally introduce a Cross-Site Scripting (XSS) vulnerability.
+ *
+ * PHP VERSION:
+ *   Requires PHP 7.0 or newer.  The heredoc closer below is left-aligned
+ *   (not indented) so it works on every PHP 7+ release without relying on
+ *   the PHP 7.3 "flexible heredoc" feature.
  *
  * SCREEN-READER NOTE:
  *   Error pages returned by this script use semantic HTML with a clear h1
@@ -79,9 +87,15 @@ define('SALT_LEN', 16);
 /**
  * Terminates the script and sends a fully accessible HTML error page.
  *
- * @param string $title     Short heading describing the error.
- * @param string $message   Full explanation in plain language.
- * @param string $back_link URL for the "Go back" link (defaults to index.php).
+ * SECURITY:
+ *   $title, $message, and $back_link are HTML-escaped inside this function
+ *   using htmlspecialchars() with ENT_QUOTES so callers cannot accidentally
+ *   introduce a Cross-Site Scripting (XSS) issue by including a value that
+ *   came from user input (for example, an uploaded filename or extension).
+ *
+ * @param string $title     Short heading describing the error (will be escaped).
+ * @param string $message   Full explanation in plain language (will be escaped).
+ * @param string $back_link URL for the "Go back" link (will be escaped; defaults to index.php).
  */
 function output_error_page(string $title, string $message, string $back_link = 'index.php'): void
 {
@@ -91,29 +105,37 @@ function output_error_page(string $title, string $message, string $back_link = '
     // Send the Content-Type header so the browser renders HTML correctly.
     header('Content-Type: text/html; charset=UTF-8');
 
+    // Escape every value that gets interpolated into HTML below.
+    // ENT_QUOTES escapes BOTH single and double quotes, so attribute values
+    // are also safe.  'UTF-8' must match the page encoding declared in <meta>.
+    $safe_title   = htmlspecialchars($title,     ENT_QUOTES, 'UTF-8');
+    $safe_message = htmlspecialchars($message,   ENT_QUOTES, 'UTF-8');
+    $safe_back    = htmlspecialchars($back_link, ENT_QUOTES, 'UTF-8');
+
     // Output a minimal but fully accessible HTML error page.
-    // Using heredoc syntax for readability; PHP will not interpret HTML entities.
+    // The closing "HTML;" marker is left-aligned (not indented) for
+    // compatibility with PHP 7.0–7.2 which do not support indented heredoc closers.
     echo <<<HTML
-    <!doctype html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Error — ExeShield</title>
-      <link rel="stylesheet" href="assets/style.css">
-    </head>
-    <body>
-      <header role="banner"><h1>ExeShield</h1></header>
-      <main id="main-content" role="main">
-        <section aria-labelledby="error-heading" class="error-section">
-          <h2 id="error-heading">Error: {$title}</h2>
-          <p>{$message}</p>
-          <p><a href="{$back_link}" class="btn-primary">Go back</a></p>
-        </section>
-      </main>
-    </body>
-    </html>
-    HTML;
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error — ExeShield</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header role="banner"><h1>ExeShield</h1></header>
+  <main id="main-content" role="main">
+    <section aria-labelledby="error-heading" class="error-section">
+      <h2 id="error-heading">Error: {$safe_title}</h2>
+      <p>{$safe_message}</p>
+      <p><a href="{$safe_back}" class="btn-primary">Go back</a></p>
+    </section>
+  </main>
+</body>
+</html>
+HTML;
 
     // Stop all further script execution.
     exit;
@@ -163,6 +185,8 @@ if ($upload['error'] !== UPLOAD_ERR_OK) {
     ];
 
     // Retrieve the message for this error code, or use a generic fallback.
+    // $upload['error'] is an integer constant so it is safe; output_error_page
+    // will HTML-escape it anyway as a defence-in-depth measure.
     $err_msg = $upload_errors[$upload['error']] ?? "Unknown upload error (code {$upload['error']}).";
     output_error_page('Upload failed', $err_msg);
 }
@@ -184,17 +208,17 @@ $original_name = basename($upload['name']);
 $extension     = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
 
 if ($extension !== 'exe') {
+    // Note: $extension is HTML-escaped by output_error_page; no need to escape here.
     output_error_page(
         'Invalid file type',
         "Only Windows .exe files are accepted. "
-        . "The file you uploaded has the extension '." . htmlspecialchars($extension, ENT_QUOTES, 'UTF-8') . "'. "
+        . "The file you uploaded has the extension '." . $extension . "'. "
         . "Please go back and select a .exe file."
     );
 }
 
-// MIME type check: use finfo to inspect the actual file content.
+// MIME type check: inspect the actual file content.
 // Windows PE executables begin with the bytes "MZ" (0x4D 0x5A).
-// finfo returns "application/x-dosexec", "application/x-msdownload", or similar.
 // We check for the "MZ" magic bytes directly for maximum reliability.
 $tmp_path = $upload['tmp_name'];
 
@@ -225,9 +249,10 @@ if ($magic_bytes !== 'MZ') {
 
 // Check that stub.exe exists in the expected location.
 if (!file_exists(STUB_PATH)) {
+    // STUB_PATH is escaped by output_error_page; no need to escape here.
     output_error_page(
         'stub.exe not found',
-        'The server cannot find stub.exe at: ' . htmlspecialchars(STUB_PATH, ENT_QUOTES, 'UTF-8') . '. '
+        'The server cannot find stub.exe at: ' . STUB_PATH . '. '
         . 'You must build stub.exe on your Windows PC using the build_stub.bat script '
         . 'in the stub-builder/ folder, then upload it to web/stub/stub.exe. '
         . 'See README.md for detailed instructions.',
