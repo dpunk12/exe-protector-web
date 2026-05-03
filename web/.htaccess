@@ -1,0 +1,106 @@
+# ExeShield — Apache / cPanel .htaccess
+#
+# PURPOSE:
+#   This file configures the Apache web server for the ExeShield application.
+#   It sets PHP upload limits, security response headers, and directory access rules.
+#
+# HOW TO USE:
+#   Place this file in the web/ directory, which you upload to cPanel public_html.
+#   Apache reads .htaccess automatically; no server restart is needed.
+#
+# NOTES FOR SCREEN-READER USERS:
+#   Lines beginning with # are comments and are ignored by Apache.
+#   Lines beginning with php_value set PHP configuration values.
+#   Lines beginning with Header add HTTP response headers.
+
+# =============================================================================
+# PHP Upload / Execution Limits
+# =============================================================================
+
+# Allow uploaded files up to 50 MB.
+# Must match MAX_UPLOAD_BYTES in protect.php (50 * 1024 * 1024 = 52,428,800 bytes).
+php_value upload_max_filesize 50M
+
+# post_max_size must be larger than upload_max_filesize to accommodate the
+# multipart form boundary and any other form fields.
+php_value post_max_size 55M
+
+# Allow the PHP script to run for up to 120 seconds.
+# Encrypting a large exe may take a few seconds; this provides headroom.
+php_value max_execution_time 120
+
+# Increase memory limit for processing large files in memory.
+php_value memory_limit 128M
+
+
+# =============================================================================
+# Security Response Headers
+# =============================================================================
+
+# Enable the Headers module directives (cPanel hosting supports this).
+<IfModule mod_headers.c>
+
+  # X-Content-Type-Options: nosniff
+  #   Prevents browsers from MIME-sniffing the response content type.
+  #   This stops a malicious uploaded file from being executed if somehow
+  #   served back to the browser with the wrong content type.
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Referrer-Policy: no-referrer
+  #   Prevents the browser from sending the page URL as a Referrer header
+  #   to any third-party resources.  Protects user privacy.
+  Header always set Referrer-Policy "no-referrer"
+
+  # X-Frame-Options: DENY
+  #   Prevents the page from being embedded in an iframe on another site.
+  #   Protects against clickjacking attacks where an attacker overlays an
+  #   invisible iframe over a malicious page to trick users into clicking.
+  Header always set X-Frame-Options "DENY"
+
+  # Content-Security-Policy (basic)
+  #   Restricts which scripts and styles can load.  This is a defence-in-depth
+  #   measure against Cross-Site Scripting (XSS) attacks.
+  #   'self' = only resources from this domain are allowed.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:;"
+
+  # Permissions-Policy: disable features not needed by ExeShield.
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+</IfModule>
+
+
+# =============================================================================
+# Protect the stub/ directory
+# =============================================================================
+
+# Deny direct HTTP access to the stub/ subdirectory.
+# stub.exe is only read by protect.php server-side; visitors should not be
+# able to download stub.exe directly through the browser.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Block direct requests for anything inside stub/
+  RewriteRule ^stub/ - [F,L]
+</IfModule>
+
+# Also deny directory listing for stub/ using Options.
+<IfModule mod_autoindex.c>
+  Options -Indexes
+</IfModule>
+
+
+# =============================================================================
+# File access restrictions
+# =============================================================================
+
+# Deny direct access to .htaccess itself (belt and braces).
+<Files ".htaccess">
+  Order allow,deny
+  Deny from all
+</Files>
+
+# Deny direct access to stub.exe if the rewrite rule above is not available.
+<Files "stub.exe">
+  Order allow,deny
+  Deny from all
+</Files>

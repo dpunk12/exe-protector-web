@@ -1,0 +1,8 @@
+# requirements.txt — Python packages needed to build the stub executable.
+# Install these inside the virtual environment before running build_stub.bat.
+#
+# pyinstaller: packages stub.py into a single standalone .exe file
+pyinstaller
+#
+# cryptography: provides AES-256-CBC encryption and PBKDF2 key derivation
+cryptography

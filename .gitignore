@@ -1,0 +1,29 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# PyInstaller output
+stub-builder/dist/
+stub-builder/build/
+stub-builder/stub.spec
+stub-builder/venv/
+
+# The compiled stub exe is generated locally; do not commit it.
+# The placeholder stub/ directory is kept via web/stub/.gitkeep
+web/stub/stub.exe
+
+# macOS metadata
+.DS_Store
+
+# Windows metadata
+Thumbs.db
+Desktop.ini
+
+# Editor directories
+.idea/
+.vscode/
+*.swp
+*.swo

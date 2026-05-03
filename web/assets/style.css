@@ -1,0 +1,579 @@
+/*
+ * style.css — ExeShield Dark Cyber Theme
+ *
+ * ACCESSIBILITY DESIGN PRINCIPLES USED HERE:
+ *   - Minimum 16px base font size so text is readable on all screens.
+ *   - 1.6 line-height for comfortable reading, especially helpful for users
+ *     with low vision or dyslexia.
+ *   - Focus rings: 3px solid cyan with 2px offset — highly visible.
+ *   - Color is never the only indicator of state — text labels also change.
+ *   - Minimum 48×48 px touch targets on all interactive elements (WCAG 2.5.5).
+ *   - prefers-reduced-motion: animations are disabled for users who request it.
+ *   - prefers-contrast: more: increases text/background contrast further.
+ *   - High contrast color palette:
+ *       Background    #0a0e14  (near-black)
+ *       Primary text  #e6edf3  (near-white, ~14:1 contrast ratio vs background)
+ *       Accent cyan   #00e5ff  (~10:1 vs background)
+ *       Purple accent #7c3aed
+ *       Error red     #ff4444
+ *
+ * SCREEN-READER NOTE:
+ *   CSS is entirely visual and has no semantic meaning to screen readers.
+ *   All accessibility features for screen readers are in the HTML (aria-*, roles).
+ *   This file ensures the visual experience matches accessibility requirements.
+ */
+
+/* =============================================================================
+   1. CSS Custom Properties (Design Tokens)
+   ============================================================================= */
+
+:root {
+  /* --- Color palette --- */
+  --color-bg:          #0a0e14;   /* page background */
+  --color-bg-surface:  #141924;   /* card / section background */
+  --color-bg-input:    #1c2333;   /* form field background */
+  --color-text:        #e6edf3;   /* primary body text */
+  --color-text-muted:  #8b949e;   /* secondary / hint text */
+  --color-accent:      #00e5ff;   /* neon cyan — primary interactive accent */
+  --color-accent-dark: #00b8cc;   /* darker cyan for hover states */
+  --color-purple:      #7c3aed;   /* purple secondary accent */
+  --color-purple-dark: #5b21b6;   /* darker purple for hover */
+  --color-error:       #ff6b6b;   /* error state (also labeled with text) */
+  --color-success:     #4ade80;   /* success state (also labeled with text) */
+  --color-border:      #30363d;   /* subtle borders */
+  --color-focus-ring:  #00e5ff;   /* focus indicator color */
+
+  /* --- Typography --- */
+  /* Monospace stack for headings — technical, hacker feel. */
+  --font-heading: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  /* Readable sans-serif for body text. */
+  --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  /* Minimum font size per accessibility requirements. */
+  --font-size-base: 1rem;        /* 16px at default browser settings */
+  --font-size-sm:   0.875rem;    /* 14px — used only for hint text */
+  --font-size-lg:   1.125rem;    /* 18px */
+  --font-size-xl:   1.5rem;      /* 24px */
+  --font-size-2xl:  2rem;        /* 32px */
+
+  /* --- Spacing --- */
+  --space-xs:  0.25rem;   /* 4px */
+  --space-sm:  0.5rem;    /* 8px */
+  --space-md:  1rem;      /* 16px */
+  --space-lg:  1.5rem;    /* 24px */
+  --space-xl:  2rem;      /* 32px */
+  --space-2xl: 3rem;      /* 48px */
+
+  /* --- Layout --- */
+  --max-width: 800px;
+  --border-radius: 6px;
+
+  /* --- Transitions --- */
+  --transition-fast: 150ms ease;
+}
+
+
+/* =============================================================================
+   2. CSS Reset / Normalize
+   ============================================================================= */
+
+/*
+ * box-sizing: border-box makes width/height calculations include padding and border.
+ * This prevents overflow surprises.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* =============================================================================
+   3. Base / Body Styles
+   ============================================================================= */
+
+html {
+  /* scroll-behavior: smooth helps sighted users; reduced-motion override below. */
+  scroll-behavior: smooth;
+  /* font-size: 100% respects the user's browser font size preference. */
+  font-size: 100%;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);  /* minimum 16px */
+  line-height: 1.6;                  /* comfortable reading, non-negotiable */
+  min-height: 100vh;
+  /* Padding ensures content is never flush against the screen edge on mobile. */
+  padding: var(--space-md);
+}
+
+/* Limit maximum content width for readability on large screens. */
+body > * {
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+
+/* =============================================================================
+   4. Skip Link (keyboard / screen-reader accessibility)
+   ============================================================================= */
+
+/*
+ * The skip link is visually hidden until focused.
+ * When a keyboard user presses Tab, it becomes the first focusable element,
+ * letting them jump straight past the header to the main content.
+ */
+.skip-link {
+  position: absolute;
+  top: -9999px;           /* move off-screen visually */
+  left: var(--space-md);
+  z-index: 9999;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  text-decoration: none;
+  transition: top var(--transition-fast);
+}
+
+/* When the skip link receives focus, bring it into view. */
+.skip-link:focus {
+  top: var(--space-md);
+}
+
+
+/* =============================================================================
+   5. Typography — Headings
+   ============================================================================= */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-accent);
+  /* Margin-bottom creates visual separation between heading and following content. */
+  margin-bottom: var(--space-md);
+}
+
+h1 {
+  font-size: var(--font-size-2xl);  /* 32px */
+  /* Text shadow adds a subtle neon glow — purely decorative. */
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+h2 {
+  font-size: var(--font-size-xl);   /* 24px */
+  margin-top: var(--space-xl);
+}
+
+h3 {
+  font-size: var(--font-size-lg);   /* 18px */
+  color: var(--color-text);
+  margin-top: var(--space-lg);
+}
+
+p {
+  margin-bottom: var(--space-md);
+}
+
+/* Links */
+a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  /* Minimum touch target size for links (WCAG 2.5.5). */
+  display: inline-block;
+  min-height: 24px;
+  padding: 2px 0;
+}
+
+a:hover {
+  color: var(--color-accent-dark);
+}
+
+/* Focus ring for links — visible keyboard focus indicator. */
+a:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+code {
+  font-family: var(--font-heading);
+  background: var(--color-bg-input);
+  color: var(--color-accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+
+/* =============================================================================
+   6. Header
+   ============================================================================= */
+
+header[role="banner"] {
+  padding: var(--space-xl) 0 var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-xl);
+}
+
+.tagline {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  margin-bottom: 0;
+}
+
+
+/* =============================================================================
+   7. Status / Live Region
+   ============================================================================= */
+
+/*
+ * The status region is always in the DOM; JavaScript populates it.
+ * It uses role="status" and aria-live="polite" in the HTML.
+ * This CSS makes it visible only when it has content.
+ */
+.status-region {
+  /* min-height: 0 collapses the region when empty. */
+  min-height: 0;
+  overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+/* When the status region has text content, show a styled box. */
+.status-region:not(:empty) {
+  background: var(--color-bg-surface);
+  border-left: 4px solid var(--color-accent);
+  padding: var(--space-md);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--space-lg);
+  color: var(--color-accent);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+}
+
+
+/* =============================================================================
+   8. Form — Upload Section
+   ============================================================================= */
+
+.upload-section {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+/* Each field group: label + input + hint. */
+.field-group {
+  margin-bottom: var(--space-lg);
+}
+
+/* Labels are block-level for vertical stacking. */
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
+/* Hint / description text below inputs. */
+.field-hint {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+  line-height: 1.4;
+}
+
+/* Conditional label text "(only needed if…)" */
+.label-conditional {
+  font-weight: 400;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Text / password inputs. */
+input[type="text"],
+input[type="password"],
+input[type="file"] {
+  display: block;
+  width: 100%;
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  /* Minimum height for touch targets (WCAG 2.5.5). */
+  min-height: 48px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="file"]:hover {
+  border-color: var(--color-accent);
+}
+
+/* Focus ring — 3px solid cyan, 2px offset. Non-negotiable. */
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="file"]:focus {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.15);
+}
+
+/* Inactive (aria-disabled) state for the password field. */
+.field-inactive {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Fieldset reset — remove default browser styling. */
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+legend {
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0 var(--space-sm);
+  font-size: var(--font-size-base);
+}
+
+/* Each radio option row. */
+.radio-option {
+  margin-bottom: var(--space-md);
+}
+
+.radio-option:last-child {
+  margin-bottom: 0;
+}
+
+/* Radio button and its label side by side. */
+input[type="radio"] {
+  /* Ensure the radio is large enough to be tappable. */
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+  vertical-align: middle;
+  margin-right: var(--space-sm);
+}
+
+input[type="radio"] + label {
+  display: inline;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* Focus ring on radio buttons. */
+input[type="radio"]:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+
+/* =============================================================================
+   9. Buttons
+   ============================================================================= */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Minimum 48×48 px touch target (WCAG 2.5.5). */
+  min-height: 48px;
+  min-width: 200px;
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: 2px solid var(--color-accent);
+  border-radius: var(--border-radius);
+  font-family: var(--font-heading);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background: var(--color-bg);
+  color: var(--color-accent);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+}
+
+/* Focus ring on buttons — same 3px cyan pattern. */
+.btn-primary:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.2);
+}
+
+/* Active / pressed state. */
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* Disabled state (used when upload is in progress). */
+.btn-primary:disabled,
+.btn-primary[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* =============================================================================
+   10. Info Section (How it works)
+   ============================================================================= */
+
+.info-section {
+  margin-bottom: var(--space-xl);
+}
+
+.steps-list {
+  padding-left: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.steps-list li,
+.info-section ul li {
+  margin-bottom: var(--space-sm);
+  line-height: 1.6;
+}
+
+.info-section ul {
+  padding-left: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+
+/* =============================================================================
+   11. Error Section
+   ============================================================================= */
+
+.error-section {
+  background: var(--color-bg-surface);
+  border: 2px solid var(--color-error);
+  border-radius: var(--border-radius);
+  padding: var(--space-xl);
+  margin: var(--space-xl) 0;
+}
+
+.error-section h2 {
+  color: var(--color-error);
+}
+
+
+/* =============================================================================
+   12. Footer
+   ============================================================================= */
+
+footer[role="contentinfo"] {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-xl);
+  margin-top: var(--space-2xl);
+  padding-bottom: var(--space-xl);
+}
+
+.footer-note {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+  line-height: 1.6;
+}
+
+.footer-copy {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+
+/* =============================================================================
+   13. prefers-reduced-motion
+   ============================================================================= */
+
+/*
+ * Users who have enabled "Reduce Motion" in their OS accessibility settings
+ * will receive a version with no animations or transitions.
+ * This prevents vestibular disorders triggered by motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.001ms !important;
+    animation-iteration-count: 1       !important;
+    transition-duration:       0.001ms !important;
+    scroll-behavior:           auto    !important;
+  }
+}
+
+
+/* =============================================================================
+   14. prefers-contrast: more
+   ============================================================================= */
+
+/*
+ * Users who have enabled "Increase Contrast" in their OS accessibility settings
+ * get an even higher-contrast version of the page.
+ */
+@media (prefers-contrast: more) {
+  :root {
+    --color-bg:         #000000;
+    --color-bg-surface: #0a0e14;
+    --color-bg-input:   #000000;
+    --color-text:       #ffffff;
+    --color-text-muted: #cccccc;
+    --color-accent:     #00ffff;
+    --color-border:     #ffffff;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="file"] {
+    border-width: 3px;
+  }
+
+  .btn-primary {
+    border-width: 3px;
+  }
+}
+
+
+/* =============================================================================
+   15. Responsive — smaller screens
+   ============================================================================= */
+
+@media (max-width: 600px) {
+  h1 {
+    font-size: var(--font-size-xl);
+  }
+
+  .upload-section {
+    padding: var(--space-md);
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+}
